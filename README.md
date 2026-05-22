@@ -12,6 +12,7 @@ The repository has two main directories:
 └── END KEM/
     ├── END-512/
     └── END-1024/
+└── FCL-ML-KEM/
 ```
 
 ## Repository Layout
@@ -149,6 +150,9 @@ valgrind --track-origins=yes ./timecop 2>&1 | grep "Conditional"
 ```
 
 The same workflow applies to the `END-1024` and AVX2 implementation directories.
+
+## `FCL-ML-KEM/`
+The implementation of FCL-ML-KEM in NIST-I security level.
 
 ## Requirements
 
