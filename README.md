@@ -10,7 +10,6 @@ The repository has two main directories:
 │   ├── dfr_frontier_checked.py
 │   └── estimate_dec_failures.py
 └── END KEM/
-    ├── README.md
     ├── END-512/
     └── END-1024/
 ```
