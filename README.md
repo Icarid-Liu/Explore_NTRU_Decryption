@@ -9,6 +9,8 @@ The repository has two main directories:
 ├── scripts/
 │   ├── dfr_frontier_checked.py
 │   └── estimate_dec_failures.py
+│   └── dependencies_impact_on_wrap_errors.ipynb
+│   └── concrete_security_estimates.ipynb
 └── END KEM/
     ├── END-512/
     └── END-1024/
