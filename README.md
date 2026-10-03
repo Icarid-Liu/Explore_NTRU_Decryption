@@ -1,180 +1,131 @@
-# END KEM and Supporting Analysis Scripts
+# Explore NTRU Decryption
 
-This repository contains the reference implementation of the END KEM and the supporting scripts used to reproduce the probability and failure-estimation calculations in the accompanying paper.
+Artifact implementation for:
 
-The repository has two main directories:
+**How Compact Can NTRU Encryption Be? Heuristic Frontiers and Practical Schemes**  
+IACR ePrint 2026/1715: https://eprint.iacr.org/2026/1715
+
+This repository contains the two concrete implementations described in the paper:
 
 ```text
 .
-├── scripts/
-│   ├── dfr_frontier_checked.py
-│   └── estimate_dec_failures.py
-│   └── dependencies_impact_on_wrap_errors.ipynb
-│   └── concrete_security_estimates.ipynb
-└── END KEM/
-    ├── END-512/
-    └── END-1024/
+├── END KEM/
+│   ├── END-512/
+│   │   ├── END-512-257-C/
+│   │   └── END-512-257-AVX2/
+│   └── END-1024/
+│       ├── END-1024-257-C/
+│       └── END-1024-257-AVX2/
 └── FCL-ML-KEM/
 ```
 
-## Repository Layout
+## Requirements
 
-### `scripts/`
+Linux/x86-64 is recommended.
 
-This directory contains the analysis scripts used for the decryption-failure and frontier calculations.
+Required tools:
 
-#### `dfr_frontier_checked.py`
+- GCC or Clang
+- GNU Make
+- OpenSSL development headers for the FCL-ML-KEM NIST KAT target
+- Valgrind only for the optional TIMECOP checks
 
-This script checks the DFR and frontier probability calculations used in the NTRU-with-Encoding and NTRU-with-Trapdoor analysis.
+The AVX2 END implementations require an AVX2-capable x86-64 CPU.
 
-It includes routines for:
+## END KEM
 
-- coefficient-level probability distributions;
-- convolution and compression-noise distributions;
-- FCL exclusion probability estimates;
-- rejection-probability calculations;
-- DFR checks for NTRU-with-Encoding, NTRU-with-Trapdoor, FCL-Kyber, NwE, and END-style parameter sets.
+The repository contains portable C and AVX2 implementations for END-512 and END-1024.
 
-The script is intended for reproducing and checking the probability estimates used in the paper. Some cases are included as commented blocks in `main()` and can be enabled as needed.
+Paper parameter sizes:
 
-Example:
+| Scheme | Public key | Ciphertext |
+| --- | ---: | ---: |
+| END-512 | 514 bytes | 384 bytes |
+| END-1024 | 1027 bytes | 832 bytes |
 
-```bash
-cd scripts
-sage -python dfr_frontier_checked.py
-```
+### Portable C
 
-Depending on the local environment, this script may require SageMath, Python 3, and `mpmath`.
-
-#### `estimate_dec_failures.py`
-
-This script estimates the verification/collision term in the decryption-failure analysis. It intentionally separates this term from the other DFR contributions, such as:
-
-- the probability that the rounding error is outside the allowed error set;
-- the probability that FCL misses the correct candidate;
-- the probability that a wrong candidate passes the verification check.
-
-It supports built-in cases for:
-
-- the trapdoor frontier example;
-- `END-512`;
-- `END-1024`;
-- encoding-framework examples.
-
-Example usage:
+END-512:
 
 ```bash
-cd scripts
-python3 estimate_dec_failures.py --case all
-```
-
-Run a single case:
-
-```bash
-python3 estimate_dec_failures.py --case end-t-512
-python3 estimate_dec_failures.py --case end-t-1024
-```
-
-Optional flags:
-
-```bash
-python3 estimate_dec_failures.py --case all --signed-candidates
-python3 estimate_dec_failures.py --case all --full-candidate-count
-```
-
-Dependencies:
-
-```bash
-pip install mpmath
-```
-
-## `END KEM/`
-
-This directory contains the source code for the END KEM implementation.
-
-Two parameter sets are provided:
-
-- `END-512`
-- `END-1024`
-
-For each parameter set, two implementations are included:
-
-- a standard C implementation;
-- an AVX2-optimized implementation.
-
-The detailed build and benchmark instructions are given in:
-
-```text
-END KEM/README.md
-```
-
-A typical implementation directory has the form:
-
-```text
-END KEM/END-512/END-512-257-C/
-END KEM/END-512/END-512-257-AVX2/
-END KEM/END-1024/END-1024-257-C/
-END KEM/END-1024/END-1024-257-AVX2/
-```
-
-Because the directory name contains a space, quote the path when using shell commands if needed:
-
-```bash
-cd "END KEM/END-512/END-512-257-C/"
-```
-
-## Building and Running END
-
-To build and run a specific END implementation, enter the corresponding implementation directory and use the provided `Makefile`.
-
-For example, for the standard C implementation of `END-512`:
-
-```bash
-cd "END KEM/END-512/END-512-257-C/"
-make main -j$(nproc)
+cd "END KEM/END-512/END-512-257-C"
+make main
 ./main
 ```
 
-For memory profiling:
+END-1024:
 
 ```bash
-make memory_usage -j$(nproc)
-valgrind --tool=massif --heap=yes --stacks=yes \
-    --massif-out-file=memory_profile.out ./memory_usage
-ms_print memory_profile.out
+cd "END KEM/END-1024/END-1024-257-C"
+make main
+./main
 ```
 
-For timing-leakage checks:
+### AVX2
+
+END-512:
 
 ```bash
-make timecop -j$(nproc)
+cd "END KEM/END-512/END-512-257-AVX2"
+make main
+./main
+```
+
+END-1024:
+
+```bash
+cd "END KEM/END-1024/END-1024-257-AVX2"
+make main
+./main
+```
+
+Each `main` executable performs a KEM correctness run and reports KeyGen, Encapsulation, and Decapsulation cycle counts.
+
+### Optional TIMECOP check
+
+From an END implementation directory:
+
+```bash
+make timecop
 valgrind --track-origins=yes ./timecop 2>&1 | grep "Conditional"
 ```
 
-The same workflow applies to the `END-1024` and AVX2 implementation directories.
+## FCL-ML-KEM
 
-## `FCL-ML-KEM/`
-The implementation of FCL-ML-KEM in NIST-I security level.
+The paper implementation is the NIST-I / `KYBER_K=2` instantiation.
 
-## Requirements
+Its parameters include:
 
-The exact dependencies depend on which part of the repository is used.
+- `du = 9`
+- `dv = 3`
+- 128-bit verification tag
+- 800-byte public key
+- 688-byte ciphertext
 
-For the analysis scripts:
+Build and run the correctness test:
 
-- Python 3;
-- `mpmath`;
-- SageMath for scripts that use Sage-specific arithmetic.
+```bash
+cd FCL-ML-KEM
+make test/test_kyber512
+./test/test_kyber512
+```
 
-For the END implementation:
+Build and run the cycle benchmark:
 
-- a C compiler such as `gcc` or `clang`;
-- `make`;
-- AVX2-capable hardware for the AVX2 implementations;
-- `valgrind` for memory and timing-leakage checks.
+```bash
+make test/test_speed512
+./test/test_speed512
+```
 
-## Reproducibility Notes
+Build the NIST KAT generator:
 
-The scripts in `scripts/` are intended to reproduce the probability estimates and sanity checks used in the paper. The implementation in `END KEM/` is intended to reproduce the concrete performance and correctness experiments for the END KEM parameter sets.
+```bash
+make nistkat/PQCgenKAT_kem512
+./nistkat/PQCgenKAT_kem512
+```
 
-The frontier calculations should be interpreted according to the assumptions stated in the paper, including the coefficient-independence model, the FCL exclusion estimate, and the specified verification/collision model.
+The inherited `KYBER_K=3` and `KYBER_K=4` build targets are not part of the paper's FCL-ML-KEM parameter set.
+
+## Licensing
+
+See `LICENSE` for the repository license and `THIRD_PARTY.md` for third-party source notices.
