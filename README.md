@@ -48,10 +48,10 @@ The following mapping is based on the section references and experiment names re
 | Coefficient-independence model and FCL exclusion assumptions (source comments refer to Sections 2–3) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
 | NTRU-with-Encoding and NTRU-with-Trapdoor frontier/DFR calculations (source comments refer to Sections 4–5) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
 | Verification/collision contribution to `Pr[Dec. fails]`, including END-512 and END-1024 | `scripts/estimate_dec_failures.py` | `sage -python scripts/estimate_dec_failures.py --case all` |
-| Dependence / wrap-error experiment | `scripts/dependencies_impact_on_wrap_errors.ipynb` | `./artifact/run_notebooks.sh dependencies` |
-| Concrete lattice-security estimates used in parameter analysis | `scripts/concrete_security_estimates.ipynb` | `./artifact/setup_estimators.sh && ./artifact/run_notebooks.sh security` |
-| END KEM correctness and cycle-count implementation experiments | `END KEM/END-512/`, `END KEM/END-1024/` | build and run the corresponding `main` target; `./artifact/run_full.sh` automates all supported variants |
-| FCL-ML-KEM correctness, test vectors, KATs, and cycle-count experiments | `FCL-ML-KEM/` | `make test`, `make speed`, `make nistkat`; also covered by `./artifact/run_full.sh` |
+| Dependence / wrap-error experiment | `scripts/dependencies_impact_on_wrap_errors.ipynb` | `bash artifact/run_notebooks.sh dependencies` |
+| Concrete lattice-security estimates used in parameter analysis | `scripts/concrete_security_estimates.ipynb` | `bash artifact/setup_estimators.sh && bash artifact/run_notebooks.sh security` |
+| END KEM correctness and cycle-count implementation experiments | `END KEM/END-512/`, `END KEM/END-1024/` | build and run the corresponding `main` target; `bash artifact/run_full.sh` automates all supported variants |
+| FCL-ML-KEM correctness, test vectors, KATs, and cycle-count experiments | `FCL-ML-KEM/` | `make test`, `make speed`, `make nistkat`; also covered by `bash artifact/run_full.sh` |
 
 The repository does not contain the camera-ready PDF, so exact table/figure numbering cannot be recovered reliably from the code alone. This is called out again in `SUBMISSION_CHECKLIST.md`.
 
@@ -90,14 +90,14 @@ docker run --rm -it explore-ntru-artifact bash
 Inside the container:
 
 ```bash
-./artifact/environment_report.sh
-./artifact/smoke_test.sh
+bash artifact/environment_report.sh
+bash artifact/smoke_test.sh
 ```
 
 For the complete reproduction workflow:
 
 ```bash
-./artifact/run_full.sh
+bash artifact/run_full.sh
 ```
 
 Generated reviewer-side outputs are written under `artifact-output/` and are intentionally ignored by Git.
@@ -117,8 +117,8 @@ Then install the one additional notebook package and fetch exact estimator revis
 
 ```bash
 sage -pip install tqdm==4.67.1
-./artifact/setup_estimators.sh
-./artifact/environment_report.sh
+bash artifact/setup_estimators.sh
+bash artifact/environment_report.sh
 ```
 
 The setup script clones third-party estimator repositories into `scripts/` at the exact commits recorded in the committed concrete-security notebook. Those repositories are not vendored into this artifact.
@@ -166,20 +166,20 @@ The wrapper contains orchestration/parameter selection only; the probability-dis
 Fetch exact external estimators first:
 
 ```bash
-./artifact/setup_estimators.sh
+bash artifact/setup_estimators.sh
 ```
 
 Then execute either notebook non-interactively:
 
 ```bash
-./artifact/run_notebooks.sh dependencies
-./artifact/run_notebooks.sh security
+bash artifact/run_notebooks.sh dependencies
+bash artifact/run_notebooks.sh security
 ```
 
 or both:
 
 ```bash
-./artifact/run_notebooks.sh all
+bash artifact/run_notebooks.sh all
 ```
 
 Executed notebooks are written to `artifact-output/notebooks/`. The concrete-security notebook prints the three estimator commit hashes at the beginning; they should exactly match the pins listed above.
@@ -235,7 +235,7 @@ Equivalent targets exist for 768 and 1024 because the inherited build system exp
 ## 9. Quick artifact smoke test
 
 ```bash
-./artifact/smoke_test.sh
+bash artifact/smoke_test.sh
 ```
 
 The smoke test:
@@ -269,7 +269,7 @@ Documentation and artifact-support material on this preparation branch were prod
 After author review and after replacing any remaining submission metadata/checklist items:
 
 ```bash
-./artifact/package.sh
+bash artifact/package.sh
 ```
 
 The script creates a `.tar.gz` from the currently checked-out Git commit and prints a SHA-256 digest. For the HotCRP artifact submission, provide both the public repository URL and an immutable Git commit or tag.
