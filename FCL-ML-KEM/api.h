@@ -25,7 +25,7 @@ int pqcrystals_kyber512_ref_dec(uint8_t *ss, const uint8_t *ct, const uint8_t *s
 
 #define pqcrystals_kyber768_SECRETKEYBYTES 2400
 #define pqcrystals_kyber768_PUBLICKEYBYTES 1184
-#define pqcrystals_kyber768_CIPHERTEXTBYTES 1104
+#define pqcrystals_kyber768_CIPHERTEXTBYTES 1120
 #define pqcrystals_kyber768_KEYPAIRCOINBYTES 64
 #define pqcrystals_kyber768_ENCCOINBYTES 32
 #define pqcrystals_kyber768_BYTES 32
@@ -45,7 +45,7 @@ int pqcrystals_kyber768_ref_dec(uint8_t *ss, const uint8_t *ct, const uint8_t *s
 
 #define pqcrystals_kyber1024_SECRETKEYBYTES 3168
 #define pqcrystals_kyber1024_PUBLICKEYBYTES 1568
-#define pqcrystals_kyber1024_CIPHERTEXTBYTES 1584
+#define pqcrystals_kyber1024_CIPHERTEXTBYTES 1600
 #define pqcrystals_kyber1024_KEYPAIRCOINBYTES 64
 #define pqcrystals_kyber1024_ENCCOINBYTES 32
 #define pqcrystals_kyber1024_BYTES 32
