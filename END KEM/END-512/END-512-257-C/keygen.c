@@ -39,10 +39,10 @@ const ntru_profile SOLVE_END_257_512 = {
 
 /*
  * Compute the vector w:
- *   w = round(q'*(gamma^2*F*adj(f) + G*adj(g))/(gamma^2*f*adj(f) + g*adj(g)))
+ *   w = round(q'*(gamma*F*adj(f) + G*adj(g))/(gamma*f*adj(f) + g*adj(g)))
  * with:
  *   q' = 12289
- *   gamma = 6
+ *   gamma = 4
  * Returned value: 1 on success, or 0 on error.
  *
  * Value of w is written at the start of tmp[] (in plain 32-bit format).
@@ -62,9 +62,9 @@ compute_w(unsigned logn,
 {
 	uint32_t qp = 12289;
 
-	int32_t gamma2;
+	int32_t gamma;
 
-	gamma2 = 6;
+	gamma = 4;
 
 	size_t n = (size_t)1 << logn;
 	size_t hn = n >> 1;
@@ -81,8 +81,8 @@ compute_w(unsigned logn,
 
 	/*
 	 * We want:
-	 *   t1 <- (gamma^2)*F*adj(f) + G*adj(g)  (RNS+NTT)
-	 *   t2 <- (gamma^2)*f*adj(f) + g*adj(g)  (RNS+NTT)
+	 *   t1 <- gamma*F*adj(f) + G*adj(g)  (RNS+NTT)
+	 *   t2 <- gamma*f*adj(f) + g*adj(g)  (RNS+NTT)
 	 * We work modulo a big 31-bit prime, which is large enough to
 	 * avoid wrap-arounds, and thus allows us to get the plain integer
 	 * values (after normalization).
@@ -94,9 +94,9 @@ compute_w(unsigned logn,
 	mp_mkgm(logn, gm, PRIMES[0].g, p, p0i);
 
 	/*
-	 * gmv <- R*gamma^2  (Montgomery representation of gamma^2)
+	 * gmv <- R*gamma  (Montgomery representation of gamma)
 	 */
-	uint32_t gmv = mp_montymul(R2, mp_set(gamma2, p), p, p0i);
+	uint32_t gmv = mp_montymul(R2, mp_set(gamma, p), p, p0i);
 
 	/*
 	 * t2 <- f  (RNS+NTT)
@@ -111,8 +111,8 @@ compute_w(unsigned logn,
 	mp_NTT(logn, t4, gm, p, p0i);
 
 	/*
-	 * t5 <- (gamma^2)*f*adj(f) + g*adj(g)  (RNS+NTT)  (auto-adjoint)
-	 * t4 <- (gamma^2)*F*adj(f)             (RNS+NTT)
+	 * t5 <- gamma*f*adj(f) + g*adj(g)  (RNS+NTT)  (auto-adjoint)
+	 * t4 <- gamma*F*adj(f)             (RNS+NTT)
 	 */
 	for (size_t u = 0; u < hn; u ++) {
 		uint32_t xf = t2[u];
@@ -133,7 +133,7 @@ compute_w(unsigned logn,
 	}
 
 	/*
-	 * t1 <- (gamma^2)*F*adj(f) + G*adj(g)  (RNS+NTT)
+	 * t1 <- gamma*F*adj(f) + G*adj(g)  (RNS+NTT)
 	 */
 	poly_mp_set_small(logn, t2, G, p);
 	mp_NTT(logn, t2, gm, p, p0i);
@@ -146,7 +146,7 @@ compute_w(unsigned logn,
 	}
 
 	/*
-	 * t2 <- (gamma^2)*f*adj(f) + g*adj(j)  (RNS+NTT) (full-size)
+	 * t2 <- gamma*f*adj(f) + g*adj(j)  (RNS+NTT) (full-size)
 	 */
 	for (size_t u = 0; u < hn; u ++) {
 		t2[u] = t2[n - 1 - u] = t5[u];
@@ -170,8 +170,8 @@ compute_w(unsigned logn,
 	 * compensate for the multiplication by q'.
 	 *
 	 * Buffer reorganization:
-	 *    t1    (gamma^2)*F*adj(f) + G*adj(g) (plain, 32-bit) (n)
-	 *    t2    (gamma^2)*f*adj(f) + g*adj(g) (plain, 32-bit) (n)
+	 *    t1    gamma*F*adj(f) + G*adj(g) (plain, 32-bit) (n)
+	 *    t2    gamma*f*adj(f) + g*adj(g) (plain, 32-bit) (n)
 	 *    rt1   receives the dividend (FFT) (n fxr = 2*n)
 	 *
 	 * rt2 is an alias on t2 (as hn fxr values) and recieves the
