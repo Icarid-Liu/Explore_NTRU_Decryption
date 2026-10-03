@@ -34,6 +34,7 @@ echo "[4/5] Building FCL-ML-KEM correctness test"
     make test/test_kyber512 -j"$(nproc)"
     ./test/test_kyber512
 ) | tee "${OUT}/fcl_ml_kem_512_test.txt"
+grep -q "CRYPTO_CIPHERTEXTBYTES: 688" "${OUT}/fcl_ml_kem_512_test.txt"
 
 echo "[5/5] AVX2 build check (when supported)"
 if grep -qw avx2 /proc/cpuinfo 2>/dev/null; then
