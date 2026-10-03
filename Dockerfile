@@ -1,4 +1,4 @@
-FROM sagemath/sagemath:10.1
+FROM sagemath/sagemath:10.1@sha256:4f3be85d56e3bd5303e905940473d549abe7fb4f9b762c3e91abfac6f0d07884
 
 USER root
 RUN apt-get update \
