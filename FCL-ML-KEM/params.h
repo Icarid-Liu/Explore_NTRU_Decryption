@@ -23,7 +23,6 @@
 
 #define KYBER_SYMBYTES 32   /* size in bytes of hashes, and seeds */
 #define KYBER_SSBYTES  32   /* size in bytes of shared key */
-#define FCL_TAGBYTES   16   /* lambda/8 for the paper's lambda = 128 */
 
 #define KYBER_POLYBYTES		384
 #define KYBER_POLYVECBYTES	(KYBER_K * KYBER_POLYBYTES)
@@ -32,14 +31,17 @@
 #define KYBER_ETA1 3
 #define KYBER_POLYCOMPRESSEDBYTES    96
 #define KYBER_POLYVECCOMPRESSEDBYTES (KYBER_K * 288)
+#define FCL_TAGBYTES                  16  /* paper NIST-I instantiation: lambda = 128 */
 #elif KYBER_K == 3
 #define KYBER_ETA1 2
 #define KYBER_POLYCOMPRESSEDBYTES    128
 #define KYBER_POLYVECCOMPRESSEDBYTES (KYBER_K * 320)
+#define FCL_TAGBYTES                  KYBER_SYMBYTES  /* inherited non-paper target */
 #elif KYBER_K == 4
 #define KYBER_ETA1 2
 #define KYBER_POLYCOMPRESSEDBYTES    160
 #define KYBER_POLYVECCOMPRESSEDBYTES (KYBER_K * 352)
+#define FCL_TAGBYTES                  KYBER_SYMBYTES  /* inherited non-paper target */
 #endif
 
 #define KYBER_ETA2 2
