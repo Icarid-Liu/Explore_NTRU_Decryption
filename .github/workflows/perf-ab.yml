@@ -1,0 +1,60 @@
+name: temporary-perf-ab
+
+on:
+  push:
+    branches:
+      - artifact-asiacrypt-2026
+    paths:
+      - .github/workflows/perf-ab.yml
+
+jobs:
+  bench:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare main and paper-aligned implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git worktree add /tmp/before origin/main
+          git worktree add /tmp/after HEAD
+
+          bench_end() {
+            local root="$1"
+            local label="$2"
+            cd "$root/END KEM/END-512/END-512-257-C"
+            sed -i 's/#define NTEST 100000/#define NTEST 100/' main.c
+            sed -i $'s/^\\tclang /\\tgcc /' Makefile
+            make clean >/dev/null
+            make main >/dev/null
+            taskset -c 0 ./main > "/tmp/${label}_end.txt"
+          }
+
+          bench_fcl() {
+            local root="$1"
+            local label="$2"
+            cd "$root/FCL-ML-KEM"
+            sed -i 's/#define NTESTS 100000/#define NTESTS 5000/' test/test_speed.c
+            make clean >/dev/null
+            make test/test_speed512 >/dev/null
+            taskset -c 0 ./test/test_speed512 > "/tmp/${label}_fcl.txt"
+          }
+
+          bench_end /tmp/before before
+          bench_end /tmp/after after
+          bench_fcl /tmp/before before
+          bench_fcl /tmp/after after
+
+          echo "===== END-512 BEFORE ====="
+          grep -E 'END.KEM.(KeyGen|Enc|Dec)' /tmp/before_end.txt
+          echo "===== END-512 AFTER ====="
+          grep -E 'END.KEM.(KeyGen|Enc|Dec)' /tmp/after_end.txt
+
+          echo "===== FCL-ML-KEM-512 BEFORE ====="
+          grep -A2 -E 'kyber_(keypair|encaps|decaps):' /tmp/before_fcl.txt
+          echo "===== FCL-ML-KEM-512 AFTER ====="
+          grep -A2 -E 'kyber_(keypair|encaps|decaps):' /tmp/after_fcl.txt
