@@ -18,13 +18,22 @@ This checklist separates repository work that can be automated from author-only 
 - [ ] Run the full notebook reproduction with the pinned estimator commits.
 - [ ] Run the performance experiments on the machine whose results will be reported.
 
+## Paper/code blockers found in review
+
+The detailed evidence is in `CODE_REVIEW.md`. Resolve these before freezing the artifact:
+
+- [ ] FCL-ML-KEM: reconcile the paper's 16-byte authentication tag / 688-byte NIST-I ciphertext with the implementation's 32-byte tag.
+- [ ] END-512: reconcile Table 2 / dependency-notebook `gamma=4` with C/AVX2 `compute_w()` using 6.
+- [ ] END secret distribution: reconcile the paper's fixed-weight `T_{n,k}` with the implementation's variable-weight iid-style samplers.
+- [ ] END DFR: make the FCL shortlist/candidate family used by the implementation identical to the family used for Table 3 calculations.
+- [ ] After resolving the four items above, rerun Table 3 DFR and Table 4 concrete-security calculations and update outputs/documentation.
+- [ ] Decide whether Table 5 baseline rows are in artifact scope; if yes, pin exact baseline repositories/commits/build commands.
+
 ## Author-only checks before archival
 
-- [ ] Compare the README paper-to-artifact mapping against the camera-ready PDF and insert exact Table/Figure numbers.
 - [ ] Record the exact CPU, OS, compiler versions and relevant CPU-frequency/turbo settings for the paper's benchmark machine.
 - [ ] Confirm that the root MIT grant is the license the rights holders intend for **their original contributions**.
 - [ ] Review all unannotated files, especially optimized/assembly files, for third-party provenance and add missing notices if needed.
-- [ ] Confirm the FCL-ML-KEM parameterization corresponding to each claim/table in the paper.
 - [ ] Confirm whether any external dataset, script or private input used for a paper result is missing from this repository.
 
 ## HotCRP submission metadata required by the artifact call
