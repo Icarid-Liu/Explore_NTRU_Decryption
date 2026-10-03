@@ -4,6 +4,11 @@
 #include "../kem.h"
 #include "../randombytes.h"
 
+_Static_assert(FCL_TAGBYTES == 16, "paper parameter requires a 128-bit FCL tag");
+#if KYBER_K == 2
+_Static_assert(CRYPTO_CIPHERTEXTBYTES == 688, "FCL-ML-KEM-512 ciphertext must match Table 6");
+#endif
+
 #define NTESTS 1000
 
 static int test_keys(void)
