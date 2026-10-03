@@ -12,9 +12,9 @@ This checklist separates repository work that can be automated from author-only 
 - [x] Build/run commands are documented.
 - [x] Output interpretation is documented.
 - [x] Scientific-analysis source remains unchanged; core implementation edits are limited to the two author-approved paper-alignment fixes.
-- [x] Docker and smoke/full reproduction helpers are present.
+- [x] Docker environment and minimal reproduction helpers are present.
 - [x] Generative-AI assistance is disclosed.
-- [ ] Run `bash artifact/smoke_test.sh` on a clean Linux/x86-64 environment and retain the output.
+- [ ] Build and run the documented END and FCL-ML-KEM commands on a clean Linux/x86-64 environment.
 - [ ] Run the full notebook reproduction with the pinned estimator commits.
 - [ ] Run the performance experiments on the machine whose results will be reported.
 
@@ -57,8 +57,6 @@ After all checks above:
 
 ```bash
 git status --short
-bash artifact/smoke_test.sh
-bash artifact/package.sh
 git rev-parse HEAD
 ```
 
