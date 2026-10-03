@@ -4,15 +4,15 @@ Paper reviewed: **How Compact Can NTRU Encryption Be? Heuristic Frontiers and Pr
 
 Paper URL: https://eprint.iacr.org/2026/1715
 
-Review scope: compare the public paper against the current repository, with emphasis on the concrete END implementation, FCL-ML-KEM Appendix-A implementation, DFR/security scripts, and artifact reproducibility. This review intentionally does not modify the existing cryptographic/scientific source files.
+Review scope: compare the public paper against the current repository, with emphasis on the concrete END implementation, FCL-ML-KEM Appendix-A implementation, DFR/security scripts, and artifact reproducibility. Following the review, the authors explicitly requested implementation fixes for B1 and B2; those two fixes are now applied on the artifact branch. B3 and B4 remain intentionally unresolved.
 
 ## Status
 
-The repository is **not yet ready to claim full reproduction of the paper's concrete implementation results**. Several paper/code mismatches should be resolved before archival. The most important findings are below.
+Two originally blocking mismatches have been **resolved on this branch**: B1 (FCL-ML-KEM tag/ciphertext size) and B2 (END-512 gamma). Two paper/code mismatches remain intentionally unresolved: B3 (secret sampling distribution) and B4 (FCL candidate family). Performance numbers affected by B1/B2 must be remeasured before archival.
 
-## Blocking findings
+## Resolved findings
 
-### B1. FCL-ML-KEM uses a 32-byte hash tag in code, while the paper uses a 16-byte tag
+### B1. RESOLVED — FCL-ML-KEM NIST-I now uses the paper's 16-byte tag
 
 Paper:
 - Appendix A, Algorithm 15 appends `Hash(m)[0:lambda/8]`.
@@ -28,11 +28,17 @@ Impact:
 - Table 6's primary compactness claim cannot be reproduced by the current code.
 - The implementation is not the exact Algorithm-15/16 instantiation described by the paper.
 
-Resolution choices:
-1. change the implementation to a 16-byte tag and add a regression test asserting `CRYPTO_CIPHERTEXTBYTES == 688` for `KYBER_K=2`; or
-2. revise the paper/Table 6 and all related security/size discussion to the 32-byte-tag implementation.
+Resolution applied on `artifact-asiacrypt-2026`:
+- `FCL_TAGBYTES=16` for the paper's `KYBER_K=2` / NIST-I instantiation;
+- encryption computes SHA3-256 and appends only its first 16 bytes;
+- FCL candidate verification compares only those 16 bytes;
+- `KYBER_CIPHERTEXTBYTES` is therefore 688 bytes for `KYBER_K=2`;
+- `test/test_kyber.c` contains compile-time assertions for the 16-byte tag and 688-byte ciphertext;
+- inherited K=3/4 build targets retain their prior 32-byte tag behavior and are not paper claims.
 
-### B2. END-512 trapdoor tuning constant differs between paper/analysis and implementation
+This resolves the source-level mismatch. Table 6 cycle counts still need to be remeasured after the implementation change.
+
+### B2. RESOLVED — END-512 now uses the paper's gamma=4
 
 Paper:
 - Table 2 gives END-512 `gamma = 4`.
@@ -51,8 +57,14 @@ Impact:
 - the END-512 code and the paper/analysis are not currently the same parameter point.
 - key-generation/trapdoor geometry, DFR behavior, and performance measurements may correspond to different settings.
 
-Resolution:
-- determine the intended convention and numerical value, then make Table 2, Algorithm 7 notation, dependency notebook, C implementation and AVX2 implementation agree.
+Resolution applied on `artifact-asiacrypt-2026`:
+- both portable-C and AVX2 END-512 `keygen.c::compute_w()` now use the numerical tuning coefficient `gamma=4`;
+- source comments now use the same `gamma` notation as Algorithm 7;
+- this matches Table 2 and the dependency notebook, which already used 4.
+
+This resolves the source-level mismatch. END-512 correctness/performance, especially the Table 5 cycle counts, must be rerun after the change.
+
+## Remaining blocking findings
 
 ### B3. END implementation secret sampling is not the fixed-weight distribution defined in the paper
 
@@ -168,11 +180,9 @@ The AVX2 `xmalloc` wrappers call `aligned_alloc(32, len)`, while allocations inc
 
 C11 requires the size passed to `aligned_alloc` to be an integral multiple of the alignment. Round sizes up to 32 bytes or use `posix_memalign`/an equivalent helper.
 
-### Q4. `FCL-ML-KEM/api.h` still exposes upstream Kyber ciphertext-size constants
+### Q4. RESOLVED — `FCL-ML-KEM/api.h` ciphertext-size constants
 
-For example, it defines `pqcrystals_kyber512_CIPHERTEXTBYTES 768`, while the FCL implementation changes the ciphertext format. `kem.h` uses the parameter-derived value, so internal test binaries may still work, but external users of `api.h` see an inconsistent API.
-
-Regenerate/update the API constants after the tag-size decision in B1.
+The public API constants have been updated to the actual FCL ciphertext formats. In particular, the paper's NIST-I target now exposes 688 bytes. The inherited K=3/4 targets expose their actual sizes under the retained 32-byte-tag behavior.
 
 ## Findings that align well with the paper
 
@@ -185,16 +195,16 @@ The review also found several strong matches:
 - FCL-ML-KEM uses `du=9`, `dv=3` for `KYBER_K=2`, matching Appendix A's compression setting.
 - END includes both portable-C and AVX2 variants and dedicated TIMECOP harnesses, corresponding to Section 6.3's implementation discussion.
 
-## Recommended order of resolution
+## Recommended next steps
 
-1. B1 FCL-ML-KEM 16-byte vs 32-byte tag.
-2. B2 END-512 tuning constant 4 vs 6.
-3. B3 fixed-weight vs iid secret sampler.
-4. B4 make the implementation and Table-3 FCL candidate family identical.
-5. rerun DFR/security calculations after 1–4 are frozen.
-6. add deterministic correctness regression tests and run TIMECOP at production optimization.
-7. pin external Table-5 baseline repositories/commits if reproducing the whole comparison table is an artifact goal.
-8. only then freeze the artifact tag/archive.
+1. Run the clean-environment smoke test to validate the B1/B2 source changes.
+2. Remeasure END-512 Table-5 performance after the gamma change.
+3. Remeasure FCL-ML-KEM-512 Table-6 performance after the 16-byte-tag change.
+4. Decide separately how to handle B3 (fixed-weight vs iid secret sampler).
+5. Decide separately how to handle B4 (implementation vs Table-3 FCL candidate family).
+6. Add deterministic END correctness regression tests and run TIMECOP at production optimization.
+7. Pin external Table-5 baseline repositories/commits if reproducing the whole comparison table is an artifact goal.
+8. Freeze the artifact tag/archive only after the selected remaining scope is documented.
 
 ## Review boundary
 
