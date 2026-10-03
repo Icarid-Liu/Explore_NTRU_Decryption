@@ -19,14 +19,14 @@ Paper:
 - NIST-I uses `lambda = 128`, so the tag is 16 bytes.
 - Table 6 reports an FCL-ML-KEM-512 ciphertext of **688 bytes**.
 
-Current code:
-- `FCL-ML-KEM/params.h` defines `KYBER_SYMBYTES = 32` and includes a full `KYBER_SYMBYTES` in `KYBER_INDCPA_BYTES`.
-- For `KYBER_K=2`, the compressed MLWE components occupy `2*288 + 96 = 672` bytes, so the implementation ciphertext is **672 + 32 = 704 bytes**, not 688.
-- `FCL-ML-KEM/indcpa.c` writes and verifies the full SHA3-256 output rather than the first 16 bytes.
+Original pre-fix code:
+- `FCL-ML-KEM/params.h` defined `KYBER_SYMBYTES = 32` and included a full `KYBER_SYMBYTES` in `KYBER_INDCPA_BYTES`.
+- For `KYBER_K=2`, the compressed MLWE components occupied `2*288 + 96 = 672` bytes, so the implementation ciphertext was **672 + 32 = 704 bytes**, not 688.
+- `FCL-ML-KEM/indcpa.c` wrote and verified the full SHA3-256 output rather than the first 16 bytes.
 
-Impact:
-- Table 6's primary compactness claim cannot be reproduced by the current code.
-- The implementation is not the exact Algorithm-15/16 instantiation described by the paper.
+Impact before the fix:
+- Table 6's primary compactness claim could not be reproduced by that code.
+- The implementation was not the exact Algorithm-15/16 instantiation described by the paper.
 
 Resolution applied on `artifact-asiacrypt-2026`:
 - `FCL_TAGBYTES=16` for the paper's `KYBER_K=2` / NIST-I instantiation;
@@ -47,15 +47,15 @@ Paper:
 Analysis notebook:
 - `scripts/dependencies_impact_on_wrap_errors.ipynb` sets `gamma = 4` for END-512 and `gamma = 3` for END-1024.
 
-Current implementation:
+Original pre-fix implementation:
 - both C and AVX2 END-512 `keygen.c::compute_w()` set the effective tuning constant named `gamma2` to **6**.
 - END-1024 sets it to **3**, matching Table 2 numerically.
 
-The source comments describe the expression using `gamma^2` while the paper writes `gamma`, so there is also a notation ambiguity; however, the numerical END-512 value still differs (paper/notebook 4 vs implementation 6).
+The pre-fix source comments described the expression using `gamma^2` while the paper writes `gamma`; the numerical END-512 value also differed (paper/notebook 4 vs implementation 6).
 
-Impact:
-- the END-512 code and the paper/analysis are not currently the same parameter point.
-- key-generation/trapdoor geometry, DFR behavior, and performance measurements may correspond to different settings.
+Impact before the fix:
+- the END-512 code and the paper/analysis were not the same parameter point.
+- key-generation/trapdoor geometry, DFR behavior, and performance measurements could correspond to different settings.
 
 Resolution applied on `artifact-asiacrypt-2026`:
 - both portable-C and AVX2 END-512 `keygen.c::compute_w()` now use the numerical tuning coefficient `gamma=4`;
