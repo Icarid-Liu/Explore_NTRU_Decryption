@@ -1,6 +1,9 @@
 # Explore NTRU Decryption — ASIACRYPT 2026 Artifact
 
-This repository is the artifact for the accompanying ASIACRYPT 2026 paper. It contains the END KEM implementations, the FCL-ML-KEM implementation, and the analysis material used for decryption-failure/frontier and concrete-security calculations.
+This repository is the artifact for **"How Compact Can NTRU Encryption Be? Heuristic Frontiers and Practical Schemes"** (IACR ePrint 2026/1715):
+https://eprint.iacr.org/2026/1715
+
+It contains the END KEM implementations, the FCL-ML-KEM implementation, and the analysis material used for decryption-failure/frontier and concrete-security calculations.
 
 This artifact-preparation branch intentionally does **not** change the existing cryptographic implementation or scientific-analysis source files. The changes are documentation, reproducibility wrappers, environment setup, licensing/provenance notices, and artifact packaging support.
 
@@ -41,19 +44,27 @@ https://asiacrypt.iacr.org/2026/artifacts.php
 
 ## 2. Paper-to-artifact mapping
 
-The following mapping is based on the section references and experiment names recorded in the committed source. Before the archival submission, compare the last column against the camera-ready PDF and replace descriptive anchors with exact table/figure numbers where applicable.
+The mapping below is checked against IACR ePrint 2026/1715.
 
-| Paper result / discussion | Artifact | Reproduction route |
+| Paper result / discussion | Artifact | Reproduction route / status |
 | --- | --- | --- |
-| Coefficient-independence model and FCL exclusion assumptions (source comments refer to Sections 2–3) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
-| NTRU-with-Encoding and NTRU-with-Trapdoor frontier/DFR calculations (source comments refer to Sections 4–5) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
-| Verification/collision contribution to `Pr[Dec. fails]`, including END-512 and END-1024 | `scripts/estimate_dec_failures.py` | `sage -python scripts/estimate_dec_failures.py --case all` |
-| Dependence / wrap-error experiment | `scripts/dependencies_impact_on_wrap_errors.ipynb` | `bash artifact/run_notebooks.sh dependencies` |
-| Concrete lattice-security estimates used in parameter analysis | `scripts/concrete_security_estimates.ipynb` | `bash artifact/setup_estimators.sh && bash artifact/run_notebooks.sh security` |
-| END KEM correctness and cycle-count implementation experiments | `END KEM/END-512/`, `END KEM/END-1024/` | build and run the corresponding `main` target; `bash artifact/run_full.sh` automates all supported variants |
-| FCL-ML-KEM correctness, test vectors, KATs, and cycle-count experiments | `FCL-ML-KEM/` | `make test`, `make speed`, `make nistkat`; also covered by `bash artifact/run_full.sh` |
+| Section 2.4 coefficient-independence heuristic and the 100-trial END dependency stress tests | `scripts/dependencies_impact_on_wrap_errors.ipynb` | `bash artifact/run_notebooks.sh dependencies` |
+| Section 3 FCL probability machinery | `scripts/dfr_frontier_checked.py` | used by the DFR/frontier reproduction wrapper |
+| Section 5.1.2 NTRU-with-Encoding frontier | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case ntru-encoding-frontier` |
+| Section 5.2.2 NTRU-with-Trapdoor frontier | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case ntru-trapdoor-frontier` |
+| Section 6.1, Algorithms 4–14: END decoding/PKE/KEM | `END KEM/END-512/`, `END KEM/END-1024/` | implementation source; see `CODE_REVIEW.md` for paper/code consistency findings |
+| Table 2: suggested END parameters | END `param.h`, `keygen.c`, `pke.c` | encoded PK/CT sizes match; unresolved parameter/distribution findings are documented in `CODE_REVIEW.md` |
+| Table 3: END DFR components | `scripts/dfr_frontier_checked.py`, `scripts/estimate_dec_failures.py` | `sage -python artifact/reproduce_dfr.py --case all` and `sage -python scripts/estimate_dec_failures.py --case all`; candidate-family consistency with C code must be resolved before claiming full reproduction |
+| Table 4: END sizes and concrete security | END `param.h` / codecs; `scripts/concrete_security_estimates.ipynb` | sizes are directly inspectable; security estimates via `bash artifact/setup_estimators.sh && bash artifact/run_notebooks.sh security` |
+| Table 5: END REF/AVX2 cycle counts | END `main.c` + Makefiles | END rows can be rerun locally; external baseline rows are not self-contained in this repository |
+| Section 6.3 timing-independence discussion | END `timecop.c`, `poison.h` | build the `timecop` target; see `CODE_REVIEW.md` regarding optimization-level reproducibility |
+| Appendix A, Algorithms 15–16 and Table 6: FCL-ML-KEM | `FCL-ML-KEM/` | implementation exists, but the current tag/ciphertext length does **not** match Table 6; see blocking finding B1 in `CODE_REVIEW.md` |
 
-The repository does not contain the camera-ready PDF, so exact table/figure numbering cannot be recovered reliably from the code alone. This is called out again in `SUBMISSION_CHECKLIST.md`.
+### 2.1 Paper/code consistency status
+
+A paper-to-code review was performed against ePrint 2026/1715. See `CODE_REVIEW.md` before treating this branch as an archival artifact. In particular, the current repository has unresolved differences involving the FCL-ML-KEM tag length, the END-512 trapdoor tuning value, the END secret-sampling distribution, and the FCL shortlist/candidate family used by the DFR analysis versus the C implementation.
+
+Until those items are resolved, this branch should be treated as **artifact preparation plus a reproducibility audit**, not as a claim that every Table 2–6 number is already reproduced by exactly matching code.
 
 ## 3. Reference environment and exact dependencies
 
