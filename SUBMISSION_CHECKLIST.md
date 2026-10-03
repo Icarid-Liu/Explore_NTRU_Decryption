@@ -14,7 +14,7 @@ This checklist separates repository work that can be automated from author-only 
 - [x] Artifact-only wrappers avoid edits to the main implementation/analysis source.
 - [x] Docker and smoke/full reproduction helpers are present.
 - [x] Generative-AI assistance is disclosed.
-- [ ] Run `./artifact/smoke_test.sh` on a clean Linux/x86-64 environment and retain the output.
+- [ ] Run `bash artifact/smoke_test.sh` on a clean Linux/x86-64 environment and retain the output.
 - [ ] Run the full notebook reproduction with the pinned estimator commits.
 - [ ] Run the performance experiments on the machine whose results will be reported.
 
@@ -47,8 +47,8 @@ After all checks above:
 
 ```bash
 git status --short
-./artifact/smoke_test.sh
-./artifact/package.sh
+bash artifact/smoke_test.sh
+bash artifact/package.sh
 git rev-parse HEAD
 ```
 
