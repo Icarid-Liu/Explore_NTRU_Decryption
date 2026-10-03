@@ -11,7 +11,7 @@ This checklist separates repository work that can be automated from author-only 
 - [x] Notebook Sage/Python versions are recorded.
 - [x] Build/run commands are documented.
 - [x] Output interpretation is documented.
-- [x] Artifact-only wrappers avoid edits to the main implementation/analysis source.
+- [x] Scientific-analysis source remains unchanged; core implementation edits are limited to the two author-approved paper-alignment fixes.
 - [x] Docker and smoke/full reproduction helpers are present.
 - [x] Generative-AI assistance is disclosed.
 - [ ] Run `bash artifact/smoke_test.sh` on a clean Linux/x86-64 environment and retain the output.
@@ -22,11 +22,12 @@ This checklist separates repository work that can be automated from author-only 
 
 The detailed evidence is in `CODE_REVIEW.md`. Resolve these before freezing the artifact:
 
-- [ ] FCL-ML-KEM: reconcile the paper's 16-byte authentication tag / 688-byte NIST-I ciphertext with the implementation's 32-byte tag.
-- [ ] END-512: reconcile Table 2 / dependency-notebook `gamma=4` with C/AVX2 `compute_w()` using 6.
-- [ ] END secret distribution: reconcile the paper's fixed-weight `T_{n,k}` with the implementation's variable-weight iid-style samplers.
-- [ ] END DFR: make the FCL shortlist/candidate family used by the implementation identical to the family used for Table 3 calculations.
-- [ ] After resolving the four items above, rerun Table 3 DFR and Table 4 concrete-security calculations and update outputs/documentation.
+- [x] FCL-ML-KEM NIST-I: implementation now uses the paper's 16-byte tag and 688-byte ciphertext.
+- [x] END-512: C and AVX2 `compute_w()` now use the paper/Table-2 value `gamma=4`.
+- [ ] END secret distribution: reconcile the paper's fixed-weight `T_{n,k}` with the implementation's variable-weight iid-style samplers (intentionally not changed in the B1/B2 fix).
+- [ ] END DFR: make the FCL shortlist/candidate family used by the implementation identical to the family used for Table 3 calculations (intentionally not changed in the B1/B2 fix).
+- [ ] Rerun END-512 correctness and Table-5 cycle counts after the gamma change.
+- [ ] Rerun FCL-ML-KEM-512 correctness and Table-6 cycle counts after the tag-length change.
 - [ ] Decide whether Table 5 baseline rows are in artifact scope; if yes, pin exact baseline repositories/commits/build commands.
 
 ## Author-only checks before archival
