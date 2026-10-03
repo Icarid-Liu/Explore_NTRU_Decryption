@@ -1,0 +1,16 @@
+# Reviewer-generated outputs
+artifact-output/
+artifact-dist/
+
+# Exact third-party estimator checkouts fetched by artifact/setup_estimators.sh
+scripts/lattice-estimator/
+scripts/enhanced_lattice-estimator/
+scripts/PrimalMeetLWE/
+
+# Python/Jupyter transient files
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+
+# Local profiling output
+memory_profile.out
