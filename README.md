@@ -1,180 +1,277 @@
-# END KEM and Supporting Analysis Scripts
+# Explore NTRU Decryption — ASIACRYPT 2026 Artifact
 
-This repository contains the reference implementation of the END KEM and the supporting scripts used to reproduce the probability and failure-estimation calculations in the accompanying paper.
+This repository is the artifact for the accompanying ASIACRYPT 2026 paper. It contains the END KEM implementations, the FCL-ML-KEM implementation, and the analysis material used for decryption-failure/frontier and concrete-security calculations.
 
-The repository has two main directories:
+This artifact-preparation branch intentionally does **not** change the existing cryptographic implementation or scientific-analysis source files. The changes are documentation, reproducibility wrappers, environment setup, licensing/provenance notices, and artifact packaging support.
+
+The ASIACRYPT 2026 artifact-evaluation requirements used to prepare this branch are at:
+https://asiacrypt.iacr.org/2026/artifacts.php
+
+## 1. Artifact contents
 
 ```text
 .
+├── END KEM/
+│   ├── END-512/
+│   │   ├── END-512-257-C/
+│   │   └── END-512-257-AVX2/
+│   └── END-1024/
+│       ├── END-1024-257-C/
+│       └── END-1024-257-AVX2/
+├── FCL-ML-KEM/
 ├── scripts/
 │   ├── dfr_frontier_checked.py
-│   └── estimate_dec_failures.py
-│   └── dependencies_impact_on_wrap_errors.ipynb
+│   ├── estimate_dec_failures.py
+│   ├── dependencies_impact_on_wrap_errors.ipynb
 │   └── concrete_security_estimates.ipynb
-└── END KEM/
-    ├── END-512/
-    └── END-1024/
-└── FCL-ML-KEM/
+├── artifact/
+│   ├── environment_report.sh
+│   ├── package.sh
+│   ├── reproduce_dfr.py
+│   ├── run_full.sh
+│   ├── run_notebooks.sh
+│   ├── setup_estimators.sh
+│   └── smoke_test.sh
+├── Dockerfile
+├── LICENSE
+├── THIRD_PARTY.md
+├── AI_USE_DISCLOSURE.md
+└── SUBMISSION_CHECKLIST.md
 ```
 
-## Repository Layout
+## 2. Paper-to-artifact mapping
 
-### `scripts/`
+The following mapping is based on the section references and experiment names recorded in the committed source. Before the archival submission, compare the last column against the camera-ready PDF and replace descriptive anchors with exact table/figure numbers where applicable.
 
-This directory contains the analysis scripts used for the decryption-failure and frontier calculations.
+| Paper result / discussion | Artifact | Reproduction route |
+| --- | --- | --- |
+| Coefficient-independence model and FCL exclusion assumptions (source comments refer to Sections 2–3) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
+| NTRU-with-Encoding and NTRU-with-Trapdoor frontier/DFR calculations (source comments refer to Sections 4–5) | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case all` |
+| Verification/collision contribution to `Pr[Dec. fails]`, including END-512 and END-1024 | `scripts/estimate_dec_failures.py` | `sage -python scripts/estimate_dec_failures.py --case all` |
+| Dependence / wrap-error experiment | `scripts/dependencies_impact_on_wrap_errors.ipynb` | `./artifact/run_notebooks.sh dependencies` |
+| Concrete lattice-security estimates used in parameter analysis | `scripts/concrete_security_estimates.ipynb` | `./artifact/setup_estimators.sh && ./artifact/run_notebooks.sh security` |
+| END KEM correctness and cycle-count implementation experiments | `END KEM/END-512/`, `END KEM/END-1024/` | build and run the corresponding `main` target; `./artifact/run_full.sh` automates all supported variants |
+| FCL-ML-KEM correctness, test vectors, KATs, and cycle-count experiments | `FCL-ML-KEM/` | `make test`, `make speed`, `make nistkat`; also covered by `./artifact/run_full.sh` |
 
-#### `dfr_frontier_checked.py`
+The repository does not contain the camera-ready PDF, so exact table/figure numbering cannot be recovered reliably from the code alone. This is called out again in `SUBMISSION_CHECKLIST.md`.
 
-This script checks the DFR and frontier probability calculations used in the NTRU-with-Encoding and NTRU-with-Trapdoor analysis.
+## 3. Reference environment and exact dependencies
 
-It includes routines for:
+The two notebooks record a **SageMath 10.1** kernel and **Python 3.10.12**. The artifact therefore uses SageMath 10.1 as the reference mathematical environment.
 
-- coefficient-level probability distributions;
-- convolution and compression-noise distributions;
-- FCL exclusion probability estimates;
-- rejection-probability calculations;
-- DFR checks for NTRU-with-Encoding, NTRU-with-Trapdoor, FCL-Kyber, NwE, and END-style parameter sets.
+Pinned mathematical/software dependencies:
 
-The script is intended for reproducing and checking the probability estimates used in the paper. Some cases are included as commented blocks in `main()` and can be enabled as needed.
+- SageMath: **10.1**
+- Python in the committed notebooks: **3.10.12**
+- mpmath: **1.3.0** (the version packaged by SageMath 10.1)
+- gmpy2: **2.1.2** (the version packaged by SageMath 10.1)
+- tqdm: **4.67.1** in the artifact container/setup
+- standard lattice-estimator: `malb/lattice-estimator@3e48ef421ec256afddb3e7d2249a77eab6e9ba12`
+- enhanced lattice-estimator: `identitymapping/enhanced_lattice-estimator@876b66173f4354a96ddafc0ce3a79767ec43c6d4`
+- PrimalMeetLWE: `yonghaason/PrimalMeetLWE@61115115830c909e42758f2774606074bf98afb1`
 
-Example:
+For the C implementations the reference container installs GCC, Clang, GNU Make, Valgrind, Git, and OpenSSL development headers. `artifact/environment_report.sh` prints the exact compiler/library versions, CPU model and current Git commit used by a reviewer.
+
+AVX2 implementations require an x86-64 CPU exposing the `avx2` flag. Non-AVX2 machines can still build/run the portable C implementations.
+
+## 4. Recommended: Docker reproduction
+
+Docker gives reviewers the closest single-command environment to the notebook metadata.
 
 ```bash
-cd scripts
-sage -python dfr_frontier_checked.py
+git clone https://github.com/Icarid-Liu/Explore_NTRU_Decryption.git
+cd Explore_NTRU_Decryption
+git checkout artifact-asiacrypt-2026
+
+docker build -t explore-ntru-artifact .
+docker run --rm -it explore-ntru-artifact bash
 ```
 
-Depending on the local environment, this script may require SageMath, Python 3, and `mpmath`.
-
-#### `estimate_dec_failures.py`
-
-This script estimates the verification/collision term in the decryption-failure analysis. It intentionally separates this term from the other DFR contributions, such as:
-
-- the probability that the rounding error is outside the allowed error set;
-- the probability that FCL misses the correct candidate;
-- the probability that a wrong candidate passes the verification check.
-
-It supports built-in cases for:
-
-- the trapdoor frontier example;
-- `END-512`;
-- `END-1024`;
-- encoding-framework examples.
-
-Example usage:
+Inside the container:
 
 ```bash
-cd scripts
-python3 estimate_dec_failures.py --case all
+./artifact/environment_report.sh
+./artifact/smoke_test.sh
 ```
 
-Run a single case:
+For the complete reproduction workflow:
 
 ```bash
-python3 estimate_dec_failures.py --case end-t-512
-python3 estimate_dec_failures.py --case end-t-1024
+./artifact/run_full.sh
 ```
 
-Optional flags:
+Generated reviewer-side outputs are written under `artifact-output/` and are intentionally ignored by Git.
+
+## 5. Native installation
+
+A native Linux environment can be used instead of Docker. Install:
+
+- SageMath 10.1;
+- GCC and Clang;
+- GNU Make;
+- Git;
+- Valgrind (only for memory/timing-leakage checks);
+- OpenSSL development headers (for the FCL-ML-KEM NIST KAT targets).
+
+Then install the one additional notebook package and fetch exact estimator revisions:
 
 ```bash
-python3 estimate_dec_failures.py --case all --signed-candidates
-python3 estimate_dec_failures.py --case all --full-candidate-count
+sage -pip install tqdm==4.67.1
+./artifact/setup_estimators.sh
+./artifact/environment_report.sh
 ```
 
-Dependencies:
+The setup script clones third-party estimator repositories into `scripts/` at the exact commits recorded in the committed concrete-security notebook. Those repositories are not vendored into this artifact.
+
+## 6. Analysis reproduction
+
+### 6.1 Verification/collision term
+
+This script is pure Python + mpmath and is the lightest numerical reproduction target:
 
 ```bash
-pip install mpmath
+sage -python scripts/estimate_dec_failures.py --case all
 ```
 
-## `END KEM/`
-
-This directory contains the source code for the END KEM implementation.
-
-Two parameter sets are provided:
-
-- `END-512`
-- `END-1024`
-
-For each parameter set, two implementations are included:
-
-- a standard C implementation;
-- an AVX2-optimized implementation.
-
-The detailed build and benchmark instructions are given in:
-
-```text
-END KEM/README.md
-```
-
-A typical implementation directory has the form:
-
-```text
-END KEM/END-512/END-512-257-C/
-END KEM/END-512/END-512-257-AVX2/
-END KEM/END-1024/END-1024-257-C/
-END KEM/END-1024/END-1024-257-AVX2/
-```
-
-Because the directory name contains a space, quote the path when using shell commands if needed:
+Individual cases:
 
 ```bash
-cd "END KEM/END-512/END-512-257-C/"
+sage -python scripts/estimate_dec_failures.py --case end-t-512
+sage -python scripts/estimate_dec_failures.py --case end-t-1024
+sage -python scripts/estimate_dec_failures.py --case trapdoor-frontier
+sage -python scripts/estimate_dec_failures.py --case encoding
 ```
 
-## Building and Running END
-
-To build and run a specific END implementation, enter the corresponding implementation directory and use the provided `Makefile`.
-
-For example, for the standard C implementation of `END-512`:
+Optional sensitivity switches already present in the original script:
 
 ```bash
-cd "END KEM/END-512/END-512-257-C/"
-make main -j$(nproc)
+sage -python scripts/estimate_dec_failures.py --case all --signed-candidates
+sage -python scripts/estimate_dec_failures.py --case all --full-candidate-count
+```
+
+Interpretation: the script reports the relevant terms as base-2 logarithms, e.g. `Pr[Dec. fails] = 2^(...)`. More negative exponents indicate smaller estimated failure probability. The optional switches deliberately change the candidate-count convention and should not be mixed with the paper's default configuration unless performing a sensitivity check.
+
+### 6.2 DFR/frontier calculations
+
+The original `scripts/dfr_frontier_checked.py` keeps the paper cases as commented blocks in `main()`. To make those calculations exercisable without editing that source file, `artifact/reproduce_dfr.py` imports the original functions and runs the committed END-512/END-1024 blocks:
+
+```bash
+sage -python artifact/reproduce_dfr.py --case all
+```
+
+The wrapper contains orchestration/parameter selection only; the probability-distribution and DFR computations remain in the original source.
+
+### 6.3 Notebooks
+
+Fetch exact external estimators first:
+
+```bash
+./artifact/setup_estimators.sh
+```
+
+Then execute either notebook non-interactively:
+
+```bash
+./artifact/run_notebooks.sh dependencies
+./artifact/run_notebooks.sh security
+```
+
+or both:
+
+```bash
+./artifact/run_notebooks.sh all
+```
+
+Executed notebooks are written to `artifact-output/notebooks/`. The concrete-security notebook prints the three estimator commit hashes at the beginning; they should exactly match the pins listed above.
+
+## 7. END KEM build and output interpretation
+
+Example: portable END-512:
+
+```bash
+cd "END KEM/END-512/END-512-257-C"
+make main -j"$(nproc)"
 ./main
 ```
 
-For memory profiling:
+Portable END-1024 and the AVX2 directories use the same `make main` interface.
+
+The program first prints `END.KEM.Enc Shared Key` and `END.KEM.Dec Shared Key`. The two arrays are the correctness check and should match. It then prints average cycle counts for KeyGen, Enc and Dec over the implementation's built-in benchmark loop. Cycle counts are machine dependent; report the output of `artifact/environment_report.sh` with any performance numbers.
+
+Memory profiling:
 
 ```bash
-make memory_usage -j$(nproc)
+make memory_usage -j"$(nproc)"
 valgrind --tool=massif --heap=yes --stacks=yes \
-    --massif-out-file=memory_profile.out ./memory_usage
+  --massif-out-file=memory_profile.out ./memory_usage
 ms_print memory_profile.out
 ```
 
-For timing-leakage checks:
+Timing-leakage instrumentation target:
 
 ```bash
-make timecop -j$(nproc)
+make timecop -j"$(nproc)"
 valgrind --track-origins=yes ./timecop 2>&1 | grep "Conditional"
 ```
 
-The same workflow applies to the `END-1024` and AVX2 implementation directories.
+These Valgrind-based checks are diagnostic; reviewer conclusions should record the Valgrind version and platform.
 
-## `FCL-ML-KEM/`
-The implementation of FCL-ML-KEM in NIST-I security level.
+## 8. FCL-ML-KEM build and output interpretation
 
-## Requirements
+```bash
+cd FCL-ML-KEM
+make test -j"$(nproc)"
+./test/test_kyber512
 
-The exact dependencies depend on which part of the repository is used.
+make speed -j"$(nproc)"
+./test/test_speed512
 
-For the analysis scripts:
+make nistkat -j"$(nproc)"
+./nistkat/PQCgenKAT_kem512
+```
 
-- Python 3;
-- `mpmath`;
-- SageMath for scripts that use Sage-specific arithmetic.
+Equivalent targets exist for 768 and 1024 because the inherited build system exposes those parameterizations. The project-specific paper claim should be matched to the parameterization stated in the paper. Cycle-count output is hardware dependent.
 
-For the END implementation:
+## 9. Quick artifact smoke test
 
-- a C compiler such as `gcc` or `clang`;
-- `make`;
-- AVX2-capable hardware for the AVX2 implementations;
-- `valgrind` for memory and timing-leakage checks.
+```bash
+./artifact/smoke_test.sh
+```
 
-## Reproducibility Notes
+The smoke test:
 
-The scripts in `scripts/` are intended to reproduce the probability estimates and sanity checks used in the paper. The implementation in `END KEM/` is intended to reproduce the concrete performance and correctness experiments for the END KEM parameter sets.
+1. records environment metadata;
+2. runs an END-512 decryption-failure numerical case;
+3. builds the portable END-512 and END-1024 binaries without changing their source;
+4. builds and runs the FCL-ML-KEM 512 correctness test;
+5. builds AVX2 END variants only when the CPU advertises AVX2.
 
-The frontier calculations should be interpreted according to the assumptions stated in the paper, including the coefficient-independence model, the FCL exclusion estimate, and the specified verification/collision model.
+It is a build/exercisability check, not a replacement for the full paper reproduction.
+
+## 10. Source-code organization and modifications
+
+No existing files under `END KEM/`, `FCL-ML-KEM/`, or `scripts/` are modified by this artifact-preparation branch.
+
+New material under `artifact/`, the Dockerfile, CI/support files, and this documentation are packaging/reproducibility infrastructure. `artifact/reproduce_dfr.py` invokes existing functions with parameter blocks already present as comments in the original DFR script; it does not replace the scientific implementation.
+
+## 11. Licensing and third-party material
+
+See `LICENSE` for the license applied to original artifact contributions and `THIRD_PARTY.md` for third-party provenance and retained upstream terms. Source files containing their own license notices keep those notices and terms.
+
+Before archival, the authors should perform the provenance review in `SUBMISSION_CHECKLIST.md`, especially for any unannotated implementation/assembly files whose origin is known to the authors but not stated in the source.
+
+## 12. AI-use disclosure
+
+Documentation and artifact-support material on this preparation branch were produced with generative-AI assistance. The disclosure is in `AI_USE_DISCLOSURE.md`. The existing cryptographic implementation and existing scientific-analysis files were not edited by that assistance.
+
+## 13. Archival packaging
+
+After author review and after replacing any remaining submission metadata/checklist items:
+
+```bash
+./artifact/package.sh
+```
+
+The script creates a `.tar.gz` from the currently checked-out Git commit and prints a SHA-256 digest. For the HotCRP artifact submission, provide both the public repository URL and an immutable Git commit or tag.
+
+See `SUBMISSION_CHECKLIST.md` for the remaining author-only checks before final upload.
