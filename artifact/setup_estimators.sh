@@ -18,7 +18,9 @@ clone_at_commit() {
         git clone --no-tags "${url}" "${dest}"
     fi
 
-    git -C "${dest}" fetch --no-tags origin "${commit}"
+    if ! git -C "${dest}" cat-file -e "${commit}^{commit}" 2>/dev/null; then
+        git -C "${dest}" fetch --no-tags origin
+    fi
     git -C "${dest}" checkout --detach "${commit}"
 
     local actual
