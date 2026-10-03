@@ -28,13 +28,9 @@ https://asiacrypt.iacr.org/2026/artifacts.php
 │   ├── dependencies_impact_on_wrap_errors.ipynb
 │   └── concrete_security_estimates.ipynb
 ├── artifact/
-│   ├── environment_report.sh
-│   ├── package.sh
 │   ├── reproduce_dfr.py
-│   ├── run_full.sh
 │   ├── run_notebooks.sh
-│   ├── setup_estimators.sh
-│   └── smoke_test.sh
+│   └── setup_estimators.sh
 ├── Dockerfile
 ├── LICENSE
 ├── THIRD_PARTY.md
@@ -81,7 +77,7 @@ Pinned mathematical/software dependencies:
 - enhanced lattice-estimator: `identitymapping/enhanced_lattice-estimator@876b66173f4354a96ddafc0ce3a79767ec43c6d4`
 - PrimalMeetLWE: `yonghaason/PrimalMeetLWE@61115115830c909e42758f2774606074bf98afb1`
 
-For the C implementations the reference container installs GCC, Clang, GNU Make, Valgrind, Git, and OpenSSL development headers. `artifact/environment_report.sh` prints the exact compiler/library versions, CPU model and current Git commit used by a reviewer.
+For the C implementations the reference container installs GCC, Clang, GNU Make, Valgrind, Git, and OpenSSL development headers. Performance results should always be reported together with the CPU model, OS, compiler version and Git commit.
 
 AVX2 implementations require an x86-64 CPU exposing the `avx2` flag. Non-AVX2 machines can still build/run the portable C implementations.
 
@@ -98,20 +94,7 @@ docker build -t explore-ntru-artifact .
 docker run --rm -it explore-ntru-artifact bash
 ```
 
-Inside the container:
-
-```bash
-bash artifact/environment_report.sh
-bash artifact/smoke_test.sh
-```
-
-For the complete reproduction workflow:
-
-```bash
-bash artifact/run_full.sh
-```
-
-Generated reviewer-side outputs are written under `artifact-output/` and are intentionally ignored by Git.
+Inside the container, run the commands from Sections 6–8 directly. The artifact intentionally keeps the execution interface small instead of wrapping every experiment in additional shell scripts.
 
 ## 5. Native installation
 
@@ -129,7 +112,6 @@ Then install the one additional notebook package and fetch exact estimator revis
 ```bash
 sage -pip install tqdm==4.67.1
 bash artifact/setup_estimators.sh
-bash artifact/environment_report.sh
 ```
 
 The setup script clones third-party estimator repositories into `scripts/` at the exact commits recorded in the committed concrete-security notebook. Those repositories are not vendored into this artifact.
@@ -243,23 +225,7 @@ make nistkat -j"$(nproc)"
 
 Equivalent targets exist for 768 and 1024 because the inherited build system exposes those parameterizations. The project-specific paper claim should be matched to the parameterization stated in the paper. Cycle-count output is hardware dependent.
 
-## 9. Quick artifact smoke test
-
-```bash
-bash artifact/smoke_test.sh
-```
-
-The smoke test:
-
-1. records environment metadata;
-2. runs an END-512 decryption-failure numerical case;
-3. builds the portable END-512 and END-1024 binaries without changing their source;
-4. builds and runs the FCL-ML-KEM 512 correctness test;
-5. builds AVX2 END variants only when the CPU advertises AVX2.
-
-It is a build/exercisability check, not a replacement for the full paper reproduction.
-
-## 10. Source-code organization and modifications
+## 9. Source-code organization and modifications
 
 The scientific-analysis files under `scripts/` are not modified. Existing cryptographic source changes are intentionally limited to the two paper-alignment fixes authorized after review:
 
@@ -268,24 +234,23 @@ The scientific-analysis files under `scripts/` are not modified. Existing crypto
 
 New material under `artifact/`, the Dockerfile, and the documentation is packaging/reproducibility infrastructure. `artifact/reproduce_dfr.py` invokes existing functions with parameter blocks already present as comments in the original DFR script; it does not replace the scientific implementation.
 
-## 11. Licensing and third-party material
+## 10. Licensing and third-party material
 
 See `LICENSE` for the license applied to original artifact contributions and `THIRD_PARTY.md` for third-party provenance and retained upstream terms. Source files containing their own license notices keep those notices and terms.
 
 Before archival, the authors should perform the provenance review in `SUBMISSION_CHECKLIST.md`, especially for any unannotated implementation/assembly files whose origin is known to the authors but not stated in the source.
 
-## 12. AI-use disclosure
+## 11. AI-use disclosure
 
 Documentation, artifact-support material, and the two explicitly authorized paper-alignment implementation fixes were produced with generative-AI assistance and author direction. The disclosure is in `AI_USE_DISCLOSURE.md`. The scientific-analysis files under `scripts/` were not edited.
 
-## 13. Archival packaging
+## 12. Archival packaging
 
-After author review and after replacing any remaining submission metadata/checklist items:
+After author review, freeze an immutable Git tag/commit. If a tarball is needed, Git itself is sufficient:
 
 ```bash
-bash artifact/package.sh
+git archive --format=tar.gz --prefix=Explore_NTRU_Decryption/ -o artifact.tar.gz HEAD
+sha256sum artifact.tar.gz
 ```
 
-The script creates a `.tar.gz` from the currently checked-out Git commit and prints a SHA-256 digest. For the HotCRP artifact submission, provide both the public repository URL and an immutable Git commit or tag.
-
-See `SUBMISSION_CHECKLIST.md` for the remaining author-only checks before final upload.
+For the HotCRP artifact submission, provide the public repository URL together with the immutable commit or tag. See `SUBMISSION_CHECKLIST.md` for the remaining author-only checks.
