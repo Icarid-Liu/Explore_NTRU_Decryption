@@ -5,7 +5,7 @@ https://eprint.iacr.org/2026/1715
 
 It contains the END KEM implementations, the FCL-ML-KEM implementation, and the analysis material used for decryption-failure/frontier and concrete-security calculations.
 
-This artifact-preparation branch intentionally does **not** change the existing cryptographic implementation or scientific-analysis source files. The changes are documentation, reproducibility wrappers, environment setup, licensing/provenance notices, and artifact packaging support.
+This artifact-preparation branch primarily adds documentation and reproducibility support. After the paper-to-code review, two narrowly scoped implementation fixes were also made to align the submitted code with ePrint 2026/1715: (1) the NIST-I FCL-ML-KEM tag is 128 bits (16 bytes), yielding the Table-6 688-byte ciphertext; and (2) END-512 uses the Table-2 trapdoor tuning value gamma=4 in both C and AVX2 key generation. The scientific-analysis files under `scripts/` are unchanged.
 
 The ASIACRYPT 2026 artifact-evaluation requirements used to prepare this branch are at:
 https://asiacrypt.iacr.org/2026/artifacts.php
@@ -53,18 +53,18 @@ The mapping below is checked against IACR ePrint 2026/1715.
 | Section 5.1.2 NTRU-with-Encoding frontier | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case ntru-encoding-frontier` |
 | Section 5.2.2 NTRU-with-Trapdoor frontier | `scripts/dfr_frontier_checked.py` | `sage -python artifact/reproduce_dfr.py --case ntru-trapdoor-frontier` |
 | Section 6.1, Algorithms 4–14: END decoding/PKE/KEM | `END KEM/END-512/`, `END KEM/END-1024/` | implementation source; see `CODE_REVIEW.md` for paper/code consistency findings |
-| Table 2: suggested END parameters | END `param.h`, `keygen.c`, `pke.c` | encoded PK/CT sizes match; unresolved parameter/distribution findings are documented in `CODE_REVIEW.md` |
+| Table 2: suggested END parameters | END `param.h`, `keygen.c`, `pke.c` | encoded PK/CT sizes match; END-512 C/AVX2 now use gamma=4 as in Table 2; the remaining sampler/candidate-family findings are documented in `CODE_REVIEW.md` |
 | Table 3: END DFR components | `scripts/dfr_frontier_checked.py`, `scripts/estimate_dec_failures.py` | `sage -python artifact/reproduce_dfr.py --case all` and `sage -python scripts/estimate_dec_failures.py --case all`; candidate-family consistency with C code must be resolved before claiming full reproduction |
 | Table 4: END sizes and concrete security | END `param.h` / codecs; `scripts/concrete_security_estimates.ipynb` | sizes are directly inspectable; security estimates via `bash artifact/setup_estimators.sh && bash artifact/run_notebooks.sh security` |
 | Table 5: END REF/AVX2 cycle counts | END `main.c` + Makefiles | END rows can be rerun locally; external baseline rows are not self-contained in this repository |
 | Section 6.3 timing-independence discussion | END `timecop.c`, `poison.h` | build the `timecop` target; see `CODE_REVIEW.md` regarding optimization-level reproducibility |
-| Appendix A, Algorithms 15–16 and Table 6: FCL-ML-KEM | `FCL-ML-KEM/` | implementation exists, but the current tag/ciphertext length does **not** match Table 6; see blocking finding B1 in `CODE_REVIEW.md` |
+| Appendix A, Algorithms 15–16 and Table 6: FCL-ML-KEM | `FCL-ML-KEM/` | NIST-I (`KYBER_K=2`) now appends a 16-byte tag and has a 688-byte ciphertext, matching Algorithm 15 and Table 6; the inherited K=3/4 targets are not paper claims |
 
 ### 2.1 Paper/code consistency status
 
-A paper-to-code review was performed against ePrint 2026/1715. See `CODE_REVIEW.md` before treating this branch as an archival artifact. In particular, the current repository has unresolved differences involving the FCL-ML-KEM tag length, the END-512 trapdoor tuning value, the END secret-sampling distribution, and the FCL shortlist/candidate family used by the DFR analysis versus the C implementation.
+A paper-to-code review was performed against ePrint 2026/1715. The FCL-ML-KEM NIST-I tag-length mismatch and the END-512 gamma mismatch identified in that review have been fixed on this branch. Two findings intentionally remain unresolved: the END fixed-weight-vs-iid secret-sampling difference and the FCL shortlist/candidate-family difference between analysis and implementation. See `CODE_REVIEW.md` for details.
 
-Until those items are resolved, this branch should be treated as **artifact preparation plus a reproducibility audit**, not as a claim that every Table 2–6 number is already reproduced by exactly matching code.
+Because the implementation changed, Table 5 END-512 performance and Table 6 FCL-ML-KEM performance must be remeasured before archival; do not reuse pre-fix cycle counts without verification.
 
 ## 3. Reference environment and exact dependencies
 
@@ -261,9 +261,12 @@ It is a build/exercisability check, not a replacement for the full paper reprodu
 
 ## 10. Source-code organization and modifications
 
-No existing files under `END KEM/`, `FCL-ML-KEM/`, or `scripts/` are modified by this artifact-preparation branch.
+The scientific-analysis files under `scripts/` are not modified. Existing cryptographic source changes are intentionally limited to the two paper-alignment fixes authorized after review:
 
-New material under `artifact/`, the Dockerfile, CI/support files, and this documentation are packaging/reproducibility infrastructure. `artifact/reproduce_dfr.py` invokes existing functions with parameter blocks already present as comments in the original DFR script; it does not replace the scientific implementation.
+- `FCL-ML-KEM/params.h`, `indcpa.c`, `api.h`, and `test/test_kyber.c`: use a 16-byte FCL tag for the paper's NIST-I (`KYBER_K=2`) instantiation and assert the 688-byte Table-6 ciphertext size; inherited K=3/4 targets retain their previous 32-byte tag behavior.
+- `END KEM/END-512/END-512-257-C/keygen.c` and `END KEM/END-512/END-512-257-AVX2/keygen.c`: use the paper's gamma=4 tuning coefficient in `compute_w()`.
+
+New material under `artifact/`, the Dockerfile, and the documentation is packaging/reproducibility infrastructure. `artifact/reproduce_dfr.py` invokes existing functions with parameter blocks already present as comments in the original DFR script; it does not replace the scientific implementation.
 
 ## 11. Licensing and third-party material
 
@@ -273,7 +276,7 @@ Before archival, the authors should perform the provenance review in `SUBMISSION
 
 ## 12. AI-use disclosure
 
-Documentation and artifact-support material on this preparation branch were produced with generative-AI assistance. The disclosure is in `AI_USE_DISCLOSURE.md`. The existing cryptographic implementation and existing scientific-analysis files were not edited by that assistance.
+Documentation, artifact-support material, and the two explicitly authorized paper-alignment implementation fixes were produced with generative-AI assistance and author direction. The disclosure is in `AI_USE_DISCLOSURE.md`. The scientific-analysis files under `scripts/` were not edited.
 
 ## 13. Archival packaging
 
