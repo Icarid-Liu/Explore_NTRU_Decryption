@@ -128,8 +128,7 @@ void ternary_sample_poly(int8_t *a, keccak_state *state)
 	int16_t i, j;
 	int8_t __attribute__((aligned(32))) buf[384];
 
-	shake128_squeezeblocks(buf, 2, state);
-    shake128_squeeze(buf + 336, 48, state);
+	shake256_squeeze((uint8_t *)buf, sizeof buf, state);
 
     __m256i x, y, z, k, mask, ans, and1, and2, con1, con2, set1, setn1;
 
