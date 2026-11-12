@@ -266,6 +266,7 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
 {
   unsigned int i;
   uint8_t seed[KYBER_SYMBYTES];
+  uint8_t tag[KYBER_SYMBYTES];
   uint8_t nonce = 0;
   polyvec sp, pkpv, ep, at[KYBER_K], b;
   poly v, k, epp;
@@ -298,7 +299,8 @@ void indcpa_enc(uint8_t c[KYBER_INDCPA_BYTES],
   poly_reduce(&v);
 
   pack_ciphertext(c, &b, &v);
-  hash_h(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, m, KYBER_INDCPA_MSGBYTES);
+  hash_h(tag, m, KYBER_INDCPA_MSGBYTES);
+  memcpy(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, tag, FCL_TAGBYTES);
 }
 
 /*************************************************
@@ -362,14 +364,14 @@ void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
   mp.coeffs[idx0] = ~mp.coeffs[idx0];
   poly_bit2byte(m0, &mp, KYBER_N);
   hash_h(hashm, m0, KYBER_INDCPA_MSGBYTES);
-  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, KYBER_INDCPA_MSGBYTES);
+  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, FCL_TAGBYTES);
   cmov(m,m0,KYBER_SYMBYTES,!fail);
 
   memcpy(&mp, &mpp, KYBER_N*sizeof(int16_t));
   mp.coeffs[idx1] = ~mp.coeffs[idx1];
   poly_bit2byte(m0, &mp, KYBER_N);
   hash_h(hashm, m0, KYBER_INDCPA_MSGBYTES);
-  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, KYBER_INDCPA_MSGBYTES);
+  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, FCL_TAGBYTES);
   cmov(m,m0,KYBER_SYMBYTES,!fail);
 
   memcpy(&mp, &mpp, KYBER_N*sizeof(int16_t));
@@ -377,7 +379,7 @@ void indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
   mp.coeffs[idx1] = ~mp.coeffs[idx1];
   poly_bit2byte(m0, &mp, KYBER_N);
   hash_h(hashm, m0, KYBER_INDCPA_MSGBYTES);
-  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, KYBER_INDCPA_MSGBYTES);
+  fail = verify(c+KYBER_POLYVECCOMPRESSEDBYTES+KYBER_POLYCOMPRESSEDBYTES, hashm, FCL_TAGBYTES);
   cmov(m,m0,KYBER_SYMBYTES,!fail);
 
 }
